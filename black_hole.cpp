@@ -126,16 +126,18 @@ void drawLensRays() {
         if (!visible) return;
         const float bend = 0.10f / (std::abs(x) + 0.38f);
         float objectX = x;
-        float y = incoming ? -0.34f : 0.08f + bend;
-        float z = incoming ? 0.26f + bend : 0.26f + bend;
+        float y = incoming ? 0.38f : 0.22f + bend * 0.45f;
+        float z = incoming ? 0.0f : 0.30f + bend * 0.45f;
         if (incoming && capture > 0.0f) {
             const float spiralRadius = 0.64f * (1.0f - capture) + 0.025f;
             const float spiralAngle = x * 17.0f;
             objectX = std::cos(spiralAngle) * spiralRadius;
-            y = -0.34f - capture * 0.16f;
+            y = 0.38f * (1.0f - capture);
             z = std::sin(spiralAngle) * spiralRadius;
         }
-        const float fade = incoming ? 1.0f - capture * 0.92f : 1.0f;
+        const float approachFade = incoming ? std::clamp((x + 5.5f) / 1.4f, 0.0f, 1.0f) : 1.0f;
+        const float escapeFade = incoming ? 1.0f : std::clamp(x / 1.35f, 0.0f, 1.0f);
+        const float fade = incoming ? approachFade * (1.0f - capture * 0.92f) : escapeFade;
         glLineWidth(2.0f);
         glColor4f(incoming ? 0.22f : red, incoming ? 0.68f : green, incoming ? 1.0f : blue, 0.42f * fade);
         glBegin(GL_LINE_STRIP);
@@ -145,8 +147,8 @@ void drawLensRays() {
             const float trailCapture = incoming ? std::clamp((trailX + 0.72f) / 1.44f, 0.0f, 1.0f) : 0.0f;
             const float trailAngle = trailX * 17.0f;
             const float trailRadius = 0.64f * (1.0f - trailCapture) + 0.025f;
-            const float trailY = incoming ? -0.34f - trailCapture * 0.16f : 0.08f + trailBend;
-            const float trailZ = incoming ? (trailCapture > 0.0f ? std::sin(trailAngle) * trailRadius : 0.26f + trailBend) : 0.26f + trailBend;
+            const float trailY = incoming ? 0.38f * (1.0f - trailCapture) : 0.22f + trailBend * 0.45f;
+            const float trailZ = incoming ? (trailCapture > 0.0f ? std::sin(trailAngle) * trailRadius : 0.0f) : 0.30f + trailBend * 0.45f;
             const float renderedTrailX = incoming && trailCapture > 0.0f ? std::cos(trailAngle) * trailRadius : trailX;
             glVertex3f(renderedTrailX, trailY, trailZ);
         }
