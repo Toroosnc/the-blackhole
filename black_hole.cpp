@@ -119,56 +119,59 @@ void drawWarpedSpacetime() {
 void drawLensRays() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glLineWidth(2.0f);
-    for (int ray = 0; ray < 7; ++ray) {
-        const float height = (ray - 3) * 0.18f;
-        glColor4f(0.2f, 0.65f, 0.95f, 0.42f);
+    const float phase = std::fmod(static_cast<float>(glfwGetTime()) * 0.8f, 11.0f) - 5.5f;
+    auto drawProbe = [](float x, bool incoming, float red, float green, float blue) {
+        const float capture = incoming ? std::clamp((x + 0.72f) / 1.44f, 0.0f, 1.0f) : 0.0f;
+        const bool visible = incoming ? x < 0.72f : x > 0.0f;
+        if (!visible) return;
+        const float bend = 0.10f / (std::abs(x) + 0.38f);
+        float objectX = x;
+        float y = incoming ? -0.34f : 0.08f + bend;
+        float z = incoming ? 0.26f + bend : 0.26f + bend;
+        if (incoming && capture > 0.0f) {
+            const float spiralRadius = 0.64f * (1.0f - capture) + 0.025f;
+            const float spiralAngle = x * 17.0f;
+            objectX = std::cos(spiralAngle) * spiralRadius;
+            y = -0.34f - capture * 0.16f;
+            z = std::sin(spiralAngle) * spiralRadius;
+        }
+        const float fade = incoming ? 1.0f - capture * 0.92f : 1.0f;
+        glLineWidth(2.0f);
+        glColor4f(incoming ? 0.22f : red, incoming ? 0.68f : green, incoming ? 1.0f : blue, 0.42f * fade);
         glBegin(GL_LINE_STRIP);
-        for (int step = -40; step <= 40; ++step) {
-            const float x = step * 0.14f;
-            const float bend = 0.38f / (std::abs(x) + 0.22f);
-            glVertex3f(x, height + 0.35f + bend * 0.12f, 1.35f + bend * 0.32f);
+        for (int trail = 12; trail >= 1; --trail) {
+            const float trailX = x - trail * 0.07f;
+            const float trailBend = 0.10f / (std::abs(trailX) + 0.38f);
+            const float trailCapture = incoming ? std::clamp((trailX + 0.72f) / 1.44f, 0.0f, 1.0f) : 0.0f;
+            const float trailAngle = trailX * 17.0f;
+            const float trailRadius = 0.64f * (1.0f - trailCapture) + 0.025f;
+            const float trailY = incoming ? -0.34f - trailCapture * 0.16f : 0.08f + trailBend;
+            const float trailZ = incoming ? (trailCapture > 0.0f ? std::sin(trailAngle) * trailRadius : 0.26f + trailBend) : 0.26f + trailBend;
+            const float renderedTrailX = incoming && trailCapture > 0.0f ? std::cos(trailAngle) * trailRadius : trailX;
+            glVertex3f(renderedTrailX, trailY, trailZ);
         }
         glEnd();
-    }
-    const float objectX = std::fmod(static_cast<float>(glfwGetTime()) * 0.8f, 11.0f) - 5.5f;
-    const float objectBend = 0.38f / (std::abs(objectX) + 0.22f);
-    glLineWidth(3.0f);
-    glColor4f(0.38f, 0.76f, 1.0f, 0.5f);
-    glBegin(GL_LINE_STRIP);
-    for (int trail = -18; trail <= 0; ++trail) {
-        const float trailX = objectX + trail * 0.08f;
-        const float trailBend = 0.38f / (std::abs(trailX) + 0.22f);
-        glVertex3f(trailX, 0.35f + trailBend * 0.12f, 1.35f + trailBend * 0.32f);
-    }
-    glEnd();
-
-    glPointSize(18.0f);
-    glColor4f(0.2f, 0.62f, 1.0f, 0.12f);
-    glBegin(GL_POINTS);
-    glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
-    glEnd();
-    glPointSize(10.0f);
-    glColor4f(0.68f, 0.9f, 1.0f, 0.3f);
-    glBegin(GL_POINTS);
-    glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
-    glEnd();
-    glPointSize(5.0f);
-    glColor4f(0.95f, 1.0f, 1.0f, 1.0f);
-    glBegin(GL_POINTS);
-    glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
-    glEnd();
-
-    if (std::abs(objectX) < 1.15f) {
-        const float imageAngle = objectX * 0.9f + Pi * 0.5f;
-        const float imageRadius = 0.75f + 0.18f / (std::abs(objectX) + 0.18f);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_POINT_SMOOTH);
+        glPointSize(34.0f);
+        glColor4f(red, green, blue, 0.12f * fade);
+        glBegin(GL_POINTS); glVertex3f(objectX, y, z); glEnd();
+        glPointSize(23.0f);
+        glColor4f(red, green, blue, 0.32f * fade);
+        glBegin(GL_POINTS); glVertex3f(objectX, y, z); glEnd();
+        glPointSize(13.0f);
+        glColor4f(red, green, blue, 0.9f * fade);
+        glBegin(GL_POINTS); glVertex3f(objectX, y, z); glEnd();
         glPointSize(7.0f);
-        glColor4f(0.55f, 0.82f, 1.0f, 0.62f);
-        glBegin(GL_POINTS);
-        glVertex3f(std::cos(imageAngle) * imageRadius, 0.35f, 1.35f + std::sin(imageAngle) * imageRadius);
-        glVertex3f(std::cos(imageAngle + Pi) * imageRadius, 0.35f, 1.35f + std::sin(imageAngle + Pi) * imageRadius);
-        glEnd();
-    }
+        glDisable(GL_BLEND);
+        glColor3f(1.0f, incoming ? 0.92f : 0.72f, incoming ? 0.42f : 0.16f);
+        glBegin(GL_POINTS); glVertex3f(objectX, y, z); glEnd();
+        glEnable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+    };
+
+    drawProbe(phase, true, 1.0f, 0.42f, 0.06f);
+    drawProbe(phase - 3.7f, false, 0.14f, 0.52f, 1.0f);
 }
 
 void drawBlackHole3D(float delta) {
