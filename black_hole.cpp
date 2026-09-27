@@ -133,11 +133,42 @@ void drawLensRays() {
     }
     const float objectX = std::fmod(static_cast<float>(glfwGetTime()) * 0.8f, 11.0f) - 5.5f;
     const float objectBend = 0.38f / (std::abs(objectX) + 0.22f);
-    glPointSize(8.0f);
-    glColor4f(0.72f, 0.9f, 1.0f, 1.0f);
+    glLineWidth(3.0f);
+    glColor4f(0.38f, 0.76f, 1.0f, 0.5f);
+    glBegin(GL_LINE_STRIP);
+    for (int trail = -18; trail <= 0; ++trail) {
+        const float trailX = objectX + trail * 0.08f;
+        const float trailBend = 0.38f / (std::abs(trailX) + 0.22f);
+        glVertex3f(trailX, 0.35f + trailBend * 0.12f, 1.35f + trailBend * 0.32f);
+    }
+    glEnd();
+
+    glPointSize(18.0f);
+    glColor4f(0.2f, 0.62f, 1.0f, 0.12f);
     glBegin(GL_POINTS);
     glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
     glEnd();
+    glPointSize(10.0f);
+    glColor4f(0.68f, 0.9f, 1.0f, 0.3f);
+    glBegin(GL_POINTS);
+    glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
+    glEnd();
+    glPointSize(5.0f);
+    glColor4f(0.95f, 1.0f, 1.0f, 1.0f);
+    glBegin(GL_POINTS);
+    glVertex3f(objectX, 0.35f + objectBend * 0.12f, 1.35f + objectBend * 0.32f);
+    glEnd();
+
+    if (std::abs(objectX) < 1.15f) {
+        const float imageAngle = objectX * 0.9f + Pi * 0.5f;
+        const float imageRadius = 0.75f + 0.18f / (std::abs(objectX) + 0.18f);
+        glPointSize(7.0f);
+        glColor4f(0.55f, 0.82f, 1.0f, 0.62f);
+        glBegin(GL_POINTS);
+        glVertex3f(std::cos(imageAngle) * imageRadius, 0.35f, 1.35f + std::sin(imageAngle) * imageRadius);
+        glVertex3f(std::cos(imageAngle + Pi) * imageRadius, 0.35f, 1.35f + std::sin(imageAngle + Pi) * imageRadius);
+        glEnd();
+    }
 }
 
 void drawBlackHole3D(float delta) {
