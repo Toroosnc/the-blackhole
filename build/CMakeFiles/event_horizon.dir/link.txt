@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/event_horizon.dir/link.d CMakeFiles/event_horizon.dir/black_hole.cpp.o -o event_horizon  -lglfw /usr/lib/libGLX.so /usr/lib/libOpenGL.so

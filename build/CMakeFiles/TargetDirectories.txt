@@ -1,0 +1,3 @@
+/home/toroo/Coding/the-blackhole/build/CMakeFiles/event_horizon.dir
+/home/toroo/Coding/the-blackhole/build/CMakeFiles/edit_cache.dir
+/home/toroo/Coding/the-blackhole/build/CMakeFiles/rebuild_cache.dir

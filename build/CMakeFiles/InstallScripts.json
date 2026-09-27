@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/toroo/Coding/the-blackhole/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
