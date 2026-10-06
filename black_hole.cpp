@@ -172,8 +172,71 @@ void drawLensRays() {
         glEnable(GL_DEPTH_TEST);
     };
 
-    drawProbe(phase, true, 1.0f, 0.42f, 0.06f);
     drawProbe(phase - 3.7f, false, 0.14f, 0.52f, 1.0f);
+
+    constexpr float approachDuration = 4.0f;
+    constexpr float orbitDuration = 1.6f;
+    constexpr float fallDuration = 3.6f;
+    constexpr float orbitRadius = 0.62f;
+    constexpr float activeDuration = approachDuration + orbitDuration + fallDuration;
+    constexpr float cycleDuration = activeDuration + 2.0f;
+    const float elapsed = std::fmod(static_cast<float>(glfwGetTime()) * simulation.timeScale * 0.8f, cycleDuration);
+    auto starPosition = [=](float time, float& x, float& y, float& z) {
+        if (time < approachDuration) {
+            const float approach = std::clamp(time / approachDuration, 0.0f, 1.0f);
+            const float inverseApproach = 1.0f - approach;
+            x = inverseApproach * inverseApproach * inverseApproach * -5.5f
+                + 3.0f * inverseApproach * inverseApproach * approach * -4.0f
+                + 3.0f * inverseApproach * approach * approach * -0.62f
+                + approach * approach * approach * -orbitRadius;
+            z = 3.0f * inverseApproach * approach * approach * -1.2f;
+            y = 0.18f;
+            return;
+        }
+        const float orbitElapsed = std::min(time - approachDuration, orbitDuration);
+        const float fallElapsed = std::max(0.0f, time - approachDuration - orbitDuration);
+        const float fallProgress = std::clamp(fallElapsed / fallDuration, 0.0f, 1.0f);
+        const float radius = fallElapsed > 0.0f ? orbitRadius * (1.0f - fallProgress) + 0.015f : orbitRadius;
+        const float angle = Pi - orbitElapsed * 4.2f - fallElapsed * 5.5f;
+        x = std::cos(angle) * radius;
+        y = 0.18f - 0.08f * fallProgress;
+        z = std::sin(angle) * radius;
+    };
+    float starX = 0.0f;
+    float starY = 0.0f;
+    float starZ = 0.0f;
+    starPosition(elapsed, starX, starY, starZ);
+    const float starFade = elapsed < activeDuration
+        ? std::min(std::clamp(elapsed / 0.25f, 0.0f, 1.0f), std::clamp((activeDuration - elapsed) / 0.35f, 0.0f, 1.0f))
+        : 0.0f;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glLineWidth(2.5f);
+    glColor4f(1.0f, 0.48f, 0.08f, 0.78f * starFade);
+    glBegin(GL_LINE_STRIP);
+    for (int trail = 12; trail >= 1; --trail) {
+        float trailX = 0.0f;
+        float trailY = 0.0f;
+        float trailZ = 0.0f;
+        starPosition(std::max(0.0f, elapsed - trail * 0.035f), trailX, trailY, trailZ);
+        glVertex3f(trailX, trailY, trailZ);
+    }
+    glVertex3f(starX, starY, starZ);
+    glEnd();
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_POINT_SMOOTH);
+    glPointSize(34.0f);
+    glColor4f(1.0f, 0.28f, 0.02f, 0.14f * starFade);
+    glBegin(GL_POINTS); glVertex3f(starX, starY, starZ); glEnd();
+    glPointSize(21.0f);
+    glColor4f(1.0f, 0.48f, 0.06f, 0.48f * starFade);
+    glBegin(GL_POINTS); glVertex3f(starX, starY, starZ); glEnd();
+    glPointSize(10.0f);
+    glColor4f(1.0f, 0.88f, 0.48f, 0.95f * starFade);
+    glBegin(GL_POINTS); glVertex3f(starX, starY, starZ); glEnd();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void drawBlackHole3D(float delta) {
